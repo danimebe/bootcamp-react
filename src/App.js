@@ -13,38 +13,18 @@ class App extends React.Component {
         email: "",
         telefono: ""
       },
-      usuarios: [
-        {
-          nombre: "usuario0",
-          email: "usuario0@gmail.com",
-          telefono: "2342354345435"
-        },
-        {
-          nombre: "usuario1",
-          email: "usuario1@gmail.com",
-          telefono: "2342354345435"
-        },
-        {
-          nombre: "usuario2",
-          email: "usuario2@gmail.com",
-          telefono: "2342354345435"
-        },
-        {
-          nombre: "usuario3",
-          email: "usuario3@gmail.com",
-          telefono: "2342354345435"
-        },
-        {
-          nombre: "usuario4",
-          email: "usuario4@gmail.com",
-          telefono: "2342354345435"
-        }
-      ]
+      usuarios: [],
+      valueBtnForm: 'Guardar',
+      indiceAEditar: '',
     };
   }
 
-  seleccionarUsuarioAEditar(usuario) {
-    this.setState({ usuarioAEditar: usuario });
+  componentDidMount() {
+    this.listarUsuarios();
+  }
+
+  async seleccionarUsuarioAEditar(usuario, indice) {
+    await this.setState({ usuarioAEditar: usuario, valueBtnForm: 'Editar', indiceAEditar: indice });
   }
 
   onUsuarioChange = evento => {
@@ -69,7 +49,7 @@ class App extends React.Component {
 
   crearNuevoUsuario = evento => {
     evento.preventDefault();
-    fetch("http://localhost:3001/usuarios", {
+    fetch('https://nodeco-dia3.danielmb0515.now.sh/usuarios', {
       method: "POST",
       mode: "cors", // no-cors, *cors, same-origin
       cache: "no-cache",
@@ -89,6 +69,72 @@ class App extends React.Component {
       })
       .catch(error => console.log(error));
   };
+
+  listarUsuarios = async () => {
+    try {
+      const users = await fetch('https://nodeco-dia3.danielmb0515.now.sh/usuarios', {
+        method: "GET"
+      });
+
+      this.setState({
+        usuarios: await users.json()
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  editarUsuario = async (indice) => {
+    
+    try {
+      console.log(indice);
+      const updatedUserStream = await fetch(`https://nodeco-dia3.danielmb0515.now.sh/usuarios/${indice}`, {
+        method: "PUT",
+        mode: "cors", // no-cors, *cors, same-origin
+        cache: "no-cache",
+        //credentials: "same-origin", // include, *same-origin, omit
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(this.state.usuarioAEditar)
+      });
+      let updatedUser = await updatedUserStream.json();
+      let { usuarios } = this.state;
+      let nuevoUsersArray = [...usuarios];
+      nuevoUsersArray[indice] = updatedUser;
+      alert('Usuario actualizado exitosamente');
+      this.setState({
+        usuarios: nuevoUsersArray,
+        indiceAEditar: '',
+        valueBtnForm: 'Guardar',
+        usuarioAEditar: {
+          nombre: "",
+          email: "",
+          telefono: ""
+        }
+      })
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  eliminarUsuario = async (indice) => {
+    try {
+      const deletedUser = await fetch(`https://nodeco-dia3.danielmb0515.now.sh/usuarios/${indice}`, {
+        method: "DELETE"
+      });
+      console.log(await deletedUser.json());
+      const newUsersArray = this.state.usuarios;
+      newUsersArray.splice(indice, 1);
+      console.log(newUsersArray);
+      this.setState({
+        usuarios: newUsersArray
+      })
+      alert('Usuario eliminado exitosamente');
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
   render() {
     return (
@@ -110,7 +156,7 @@ class App extends React.Component {
                 <th>Nombre</th>
                 <th>email</th>
                 <th>telefono</th>
-                <th>Editar</th>
+                <th>Editar - Eliminar</th>
               </tr>
             </thead>
           </table>
@@ -121,8 +167,10 @@ class App extends React.Component {
               {this.state.usuarios.map((unUsuarioDelArray, indice) => (
                 <UsuarioComponente
                   key={indice}
+                  indice={indice}
                   {...unUsuarioDelArray}
                   seleccionar={this.seleccionarUsuarioAEditar}
+                  eliminar={this.eliminarUsuario}
                 />
               ))}
             </tbody>
@@ -132,6 +180,9 @@ class App extends React.Component {
           {...this.state.usuarioAEditar}
           onUsuarioChange={this.onUsuarioChange}
           onUserCreate={this.crearNuevoUsuario}
+          valueBtn={this.state.valueBtnForm}
+          indice={this.state.indiceAEditar}
+          onUpdateUser={this.editarUsuario}
         />
       </div>
     );

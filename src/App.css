@@ -63,4 +63,8 @@ body {
   color: #fff;
 }
 
+#btn {
+  display: flex;
+  justify-content: space-around;
+}
 /* for custom scrollbar for webkit browser*/
